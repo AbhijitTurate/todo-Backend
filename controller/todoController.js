@@ -66,7 +66,7 @@ const addTodo = async (req , res , next) =>{
     return sendResponse(req , res , next ,{statusCode: 500 ,message: "internal error" });
   }
 
-  return sendResponse(req , res , next ,{statusCode: 200 ,message: "todo Added" });
+  return sendResponse(req , res , next ,{statusCode: 201 ,message: "todo Added" });
 }
 
 const deleteTodo = async (req , res , next) => {
@@ -93,4 +93,42 @@ const deleteTodo = async (req , res , next) => {
   }
 }
 
-module.exports = { getAlltodos , getSingleTodo , addTodo , deleteTodo};
+const updateTodo = async (req,res, next) => {
+  const {
+    params: {id}
+  } = req;
+
+  const{
+    body: updateObject
+  } = req;
+
+  console.log(updateObject);
+  let validKeys= ["description"];
+  let todo = todos.find((todo) => todo.id===id);
+  let todoCopy = Object.assign(new Todo(todo.description), todo)
+  console.log("Type of todoCopy:", todoCopy);
+  for(key in req.body){
+    console.log("key",key);
+    if(validKeys.includes(key))
+    {
+      todo[key] = updateObject[key];
+    }
+  }
+
+  try{
+    await writeFile(filePath , JSON.stringify(todos , null , 2));
+    return sendResponse(req , res , next , {statusCode: 200 , message: "User updated sucessfully", payload : todo});
+
+  }
+  catch(err){
+    // todo =  {...todoCopy};
+    console.log("updated todo and  checking its parent",todo);
+    let todoIndex = todos.findIndex((todoElement) => todoElement.id === todo.id)
+    todos.splice(todoIndex , 1, todoCopy)
+    // console.log("checking if two have same reference", Object.is(todo , todoCopy));
+    // console.log("todos after replacing updated todo", todos);
+    return next(new AppError(500,"internal error operation"))
+  }
+}
+
+module.exports = { getAlltodos , getSingleTodo , addTodo , deleteTodo , updateTodo};
