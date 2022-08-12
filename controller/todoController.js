@@ -7,7 +7,7 @@ const Todo = require("../model/Todo")
 const sendResponse = require("../middlewares/sendResponse");
 const AppError = require("../utils/AppError");
 const sendErrorResponse = require("../middlewares/sendErrorResponse");
-const filePath = path.resolve(__dirname , ".." , "data" , "todos.json")
+const filePath = path.resolve(__dirname , ".." , "dat" , "todos.json")
 const util = require("util");
 
 const writeFile = util.promisify(fs.writeFile);
@@ -59,8 +59,7 @@ const addTodo = async (req , res , next) =>{
   }
   catch(err){
   todos = todos.filter((todo) => {
-    console.log("todo ID:",todo.id);
-    console.log("recieved todoID",todoId);
+  
     return todo.id !== todoId
   })
   console.log("todo list",todos);
@@ -70,4 +69,28 @@ const addTodo = async (req , res , next) =>{
   return sendResponse(req , res , next ,{statusCode: 200 ,message: "todo Added" });
 }
 
-module.exports = { getAlltodos , getSingleTodo , addTodo};
+const deleteTodo = async (req , res , next) => {
+  const{
+    params : {id}
+  } = req;
+
+  const todoIndex = todos.findIndex((todo) => todo.id===id);
+  if(todoIndex === -1){
+    return sendResponse(req , res ,next , {statusCode : 200 , message :" delete operation executed"});
+  }
+ 
+  const deletedTodo = todos.splice(todoIndex,1)[0];
+
+ 
+  console.log("deleted todo",deletedTodo);
+  try{
+    await writeFile(filePath, JSON.stringify(todos , null , 2));
+    return sendResponse(req , res , next , {statusCode: 200 , message:"todo deleted"});
+  }
+  catch(err){
+    todos.splice(todoIndex, 0 , deletedTodo);
+    return sendResponse(req , res , next , {statusCode: 500 , message:"internal write operation"});
+  }
+}
+
+module.exports = { getAlltodos , getSingleTodo , addTodo , deleteTodo};

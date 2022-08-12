@@ -14,24 +14,10 @@
     "updatedAt": 0
   },
   {
-    "id": "todo-7m9ds88lkl6qgtbd4",
-    "description": "Homework",
-    "isCompleted": false,
-    "createdAt": "12/8/2022 6:18:22 pm",
-    "updatedAt": 0
-  },
-  {
     "id": "todo-7m9ds88lkl6qgttv5",
     "description": "Swimming",
     "isCompleted": false,
     "createdAt": "12/8/2022 6:18:46 pm",
-    "updatedAt": 0
-  },
-  {
-    "id": "todo-7m9ds82uwl6qha4sd",
-    "description": "Singing",
-    "isCompleted": false,
-    "createdAt": "12/8/2022 6:31:26 pm",
     "updatedAt": 0
   }
 ]
