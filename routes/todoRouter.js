@@ -1,8 +1,8 @@
 const {Router} = require("express");
-const { getAlltodos } = require("../controller/todoController");
+const { getAlltodos, getSingleTodo } = require("../controller/todoController");
 const todoRouter = Router();
-
+// /todos
 todoRouter.route("/").get(getAlltodos).post();
-todoRouter.route("/:id").get().patch().delete();
+todoRouter.route("/:id").get(getSingleTodo).patch().delete();
 
 module.exports = todoRouter;
