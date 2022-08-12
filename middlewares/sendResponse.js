@@ -1,5 +1,8 @@
 const sendResponse = (req, res, next, config) => {
-  const { statusCode, message, payload } = config;
+  let { statusCode, message, payload } = config;
+  if(payload === undefined){
+    payload = "";
+  }
   res.status(statusCode).json({ message, data: payload });
 };
 
