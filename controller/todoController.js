@@ -108,7 +108,7 @@ const updateTodo = async (req, res, next) => {
     if (validKeys.includes(key)) {
       switch (key) {
         case "description":
-          if (updateObject[key].length < 5 || updateObject[key] === todo[key]) {
+          if (updateObject[key].length < 5) {
             console.log("inside if", updateObject[key].length < 5);
             return next(
               new AppError(
