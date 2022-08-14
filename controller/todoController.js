@@ -6,9 +6,9 @@ let todos = require("../data/todos.json");
 const Todo = require("../model/Todo");
 const sendResponse = require("../middlewares/sendResponse");
 const AppError = require("../utils/AppError");
-const sendErrorResponse = require("../middlewares/sendErrorResponse");
-const filePath = path.resolve(__dirname, "..", "dat", "todos.json");
+const filePath = path.resolve(__dirname, "..", "data", "todos.json");
 const util = require("util");
+const { isBooleanObject } = require("util/types");
 
 const writeFile = util.promisify(fs.writeFile);
 const getAlltodos = (req, res, next) => {
@@ -17,7 +17,6 @@ const getAlltodos = (req, res, next) => {
     message: "todos list",
     payload: todos,
   });
-  // res.status(200).json({ message: " todo found", data: todos });
 };
 
 const getSingleTodo = (req, res, next) => {
@@ -28,7 +27,7 @@ const getSingleTodo = (req, res, next) => {
   // if (todo === undefined) {
   //   return next(new AppError(404, `Todo with id ${id} not found`));
   // }
-   return sendResponse(req, res, next, {
+  return sendResponse(req, res, next, {
     statusCode: 200,
     message: "todo found",
     payload: todos[req.todoIndex],
@@ -39,19 +38,27 @@ const addTodo = async (req, res, next) => {
   const {
     body: { description },
   } = req;
-
-  console.log("description", description);
   let todo = new Todo(description);
   let todoId = todo.id;
   console.log("created todo", todo);
+
+  if (!todo.isValid) {
+    return next(
+      new AppError(500, "todo description should be greater than 5 letters")
+    );
+  }
+
   if (todos.find((todo) => todo.description === description)) {
-    return next(new AppError(404, "todo task already present"));
+    return next(new AppError(500, "todo task already present"));
   }
   todos.push(todo);
-
   try {
-    console.log("filepath:", filePath);
     await writeFile(filePath, JSON.stringify(todos, null, 2));
+    console.log("added todo:");
+    return sendResponse(req, res, next, {
+      statusCode: 201,
+      message: `Todo Added`,
+    });
   } catch (err) {
     todos = todos.filter((todo) => {
       return todo.id !== todoId;
@@ -62,15 +69,10 @@ const addTodo = async (req, res, next) => {
       message: "internal error",
     });
   }
-
-  return sendResponse(req, res, next, {
-    statusCode: 201,
-    message: "todo Added",
-  });
 };
 
 const deleteTodo = async (req, res, next) => {
-const todoIndex = req.todoIndex;
+  const todoIndex = req.todoIndex;
   const deletedTodo = todos.splice(todoIndex, 1)[0];
   console.log("deleted todo", deletedTodo);
   try {
@@ -89,51 +91,69 @@ const todoIndex = req.todoIndex;
 };
 
 const updateTodo = async (req, res, next) => {
-
   const { body: updateObject } = req;
+  let validKeys = ["description", "isCompleted"];
 
-  let validKeys = ["description"];
- 
-  let todoIndex= req.todoIndex;
-  console.log("index",todoIndex);
+  let todoIndex = req.todoIndex;
   let todo = todos[todoIndex];
-  console.log("Todo", todo);
   let todoCopy;
-  console.log("updateObject",updateObject.description);
-  if(updateObject.description){
-    todoCopy = Object.assign(new Todo(todo.description), todo);
-  }
- 
-  console.log("Type of todoCopy:", todoCopy);
+  todoCopy = Object.assign(new Todo(todo.description), todo);
+
+  console.log("todoCopy:", todoCopy);
   let date = new Date();
   let currentDate = date.toLocaleDateString();
   let currentTime = date.toLocaleTimeString();
+
   for (key in updateObject) {
     if (validKeys.includes(key)) {
-      todo[key] = updateObject[key];
-      todo.updatedAt = `${currentDate} ${currentTime}`;
-      console.log("updated todo:",todo);
+      switch (key) {
+        case "description":
+          if (updateObject[key].length < 5 || updateObject[key] === todo[key]) {
+            console.log("inside if", updateObject[key].length < 5);
+            return next(
+              new AppError(
+                500,
+                "todo description Invalid"
+              )
+            );
+          }
+          todo[key] = updateObject[key];
+          todo.updatedAt = `${currentDate} ${currentTime}`;
+          break;
+        case "isCompleted":
+          if(!(updateObject[key] === "true" || updateObject[key] === "false")){
+            console.log("isCompleted:",updateObject[key]);
+            console.log("type of isCompleted:",updateObject[key] === "false");
+            return next(
+              new AppError(
+                500,
+                "todo isCompleted Invalid"
+              )
+            );
+          }
+          todo[key]=updateObject[key];
+          todo.updatedAt = `${currentDate} ${currentTime}`;
+        break;
+        default:
+          break;
+      }
+      console.log("updated todo:", todo);
     }
-   
   }
 
   try {
     await writeFile(filePath, JSON.stringify(todos, null, 2));
     return sendResponse(req, res, next, {
       statusCode: 200,
-      message: "User updated sucessfully",
+      message: "Todo updated sucessfully",
       payload: todo,
     });
   } catch (err) {
-    // todo =  {...todoCopy};
-    
     let todoIndex = todos.findIndex(
       (todoElement) => todoElement.id === todo.id
     );
     todos.splice(todoIndex, 1, todoCopy);
-    console.log("updated todo",todos );
-    // console.log("checking if two have same reference", Object.is(todo , todoCopy));
-    // console.log("todos after replacing updated todo", todos);
+    console.log("updated todo", todos);
     return next(new AppError(500, "internal error operation"));
   }
 };

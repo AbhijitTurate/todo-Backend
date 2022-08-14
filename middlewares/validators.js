@@ -17,4 +17,4 @@ const isAvailable = (req, res , next)=>{
    next()
 }
 
-module.exports ={isAvailable}
+module.exports = {isAvailable}
